@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<title>Card Punch Live</title>
+<style>
+html, body{
+    margin:0;
+    background:#222;
+    color:white;
+    font-family:Arial, sans-serif;
+}
+
+#wrap{
+    max-width:1400px;
+    margin:0 auto;
+    padding:20px;
+}
+
+#header{
+    margin-bottom:10px;
+}
+
+#chars{
+    font-family:monospace;
+    font-size:13px;
+    color:#aaa;
+    letter-spacing:1px;
+    margin-bottom:4px;
+    white-space:nowrap;
+}
+
+#inputRow{
+    display:flex;
+    gap:10px;
+    align-items:center;
+    margin-bottom:10px;
+}
+
+#cardText{
+    flex:1;
+    background:#111;
+    color:#0f0;
+    font-family:monospace;
+    font-size:16px;
+    border:1px solid #555;
+    padding:6px 10px;
+    max-width:80ch;
+}
+
+#cardText:focus{
+    outline:none;
+    border-color:#0f0;
+}
+
+#cardWrap{
+    border:1px solid #555;
+    background:#111;
+    text-align:center;
+}
+
+canvas{
+    display:block;
+    max-width:100%;
+    max-height:calc(100vh - 140px);
+    object-fit:contain;
+}
+
+button{
+    padding:8px 16px;
+    font-size:14px;
+    background:#333;
+    color:white;
+    border:1px solid #555;
+    cursor:pointer;
+}
+
+button:hover{
+    background:#444;
+}
+
+#info{
+    margin-top:8px;
+    color:#888;
+    font-family:monospace;
+    font-size:12px;
+}
+
+#toast{
+    position:fixed;
+    bottom:30px;
+    left:50%;
+    transform:translateX(-50%);
+    background:#c33;
+    color:white;
+    font-family:monospace;
+    font-size:14px;
+    padding:10px 20px;
+    border-radius:4px;
+    display:none;
+    z-index:20;
+    animation:fadeIn .2s;
+}
+
+@keyframes fadeIn{
+    from{opacity:0;transform:translateX(-50%) translateY(10px)}
+    to{opacity:1;transform:translateX(-50%) translateY(0)}
+}
+</style>
+</head>
+<body>
+
+<div id="wrap">
+
+<div id="header">
+    <div id="chars">&amp;-0123456789ABCDEFGHIJKLMNOPQR/STUVWXYZ:#@'="`.&lt;(+|!$*);^~,%_&gt;?</div>
+    <div id="inputRow">
+        <input id="cardText" type="text" size="80" maxlength="80" placeholder="Type card data here..." autofocus>
+        <button id="saveBtn">Save PNG</button>
+    </div>
+</div>
+
+<div id="cardWrap">
+    <canvas id="canvas"></canvas>
+</div>
+
+<div id="info">Type up to 80 characters. Holes appear in real time.</div>
+
+<div id="toast"></div>
+
+</div>
+
+<script>
+
+const COLS=80;
+const ROWS=12;
+
+const originX=72;
+const originY=79;
+const colSpacing=(2133-72)/(COLS-1);
+const rowSpacing=(897-79)/(ROWS-1);
+
+const canvas=document.getElementById("canvas");
+const ctx=canvas.getContext("2d");
+const input=document.getElementById("cardText");
+
+const bg=new Image();
+const hole=new Image();
+let loaded=0;
+
+function onLoad(){
+    loaded++;
+    if(loaded===2) init();
+}
+
+function onError(){
+    document.getElementById("info").textContent="Failed to load image. Check that assets/punch.png and assets/hole.png exist.";
+}
+
+bg.onload=onLoad;
+hole.onload=onLoad;
+bg.onerror=onError;
+hole.onerror=onError;
+bg.src="assets/punch.png";
+hole.src="assets/hole.png";
+
+const charMap={};
+charMap["&"]=parseInt("100000000000",2);
+charMap["-"]=parseInt("010000000000",2);
+charMap["0"]=parseInt("001000000000",2);
+charMap["1"]=parseInt("000100000000",2);
+charMap["2"]=parseInt("000010000000",2);
+charMap["3"]=parseInt("000001000000",2);
+charMap["4"]=parseInt("000000100000",2);
+charMap["5"]=parseInt("000000010000",2);
+charMap["6"]=parseInt("000000001000",2);
+charMap["7"]=parseInt("000000000100",2);
+charMap["8"]=parseInt("000000000010",2);
+charMap["9"]=parseInt("000000000001",2);
+charMap["A"]=parseInt("100100000000",2);
+charMap["B"]=parseInt("100010000000",2);
+charMap["C"]=parseInt("100001000000",2);
+charMap["D"]=parseInt("100000100000",2);
+charMap["E"]=parseInt("100000010000",2);
+charMap["F"]=parseInt("100000001000",2);
+charMap["G"]=parseInt("100000000100",2);
+charMap["H"]=parseInt("100000000010",2);
+charMap["I"]=parseInt("100000000001",2);
+charMap["J"]=parseInt("010100000000",2);
+charMap["K"]=parseInt("010010000000",2);
+charMap["L"]=parseInt("010001000000",2);
+charMap["M"]=parseInt("010000100000",2);
+charMap["N"]=parseInt("010000010000",2);
+charMap["O"]=parseInt("010000001000",2);
+charMap["P"]=parseInt("010000000100",2);
+charMap["Q"]=parseInt("010000000010",2);
+charMap["R"]=parseInt("010000000001",2);
+charMap["/"]=parseInt("001100000000",2);
+charMap["S"]=parseInt("001010000000",2);
+charMap["T"]=parseInt("001001000000",2);
+charMap["U"]=parseInt("001000100000",2);
+charMap["V"]=parseInt("001000010000",2);
+charMap["W"]=parseInt("001000001000",2);
+charMap["X"]=parseInt("001000000100",2);
+charMap["Y"]=parseInt("001000000010",2);
+charMap["Z"]=parseInt("001000000001",2);
+charMap[":"]=parseInt("000010000010",2);
+charMap["#"]=parseInt("000001000010",2);
+charMap["@"]=parseInt("000000100010",2);
+charMap["'"]=parseInt("000000010010",2);
+charMap["="]=parseInt("000000001010",2);
+charMap['"']=parseInt("000000000110",2);
+charMap["`"]=parseInt("100010000010",2);
+charMap["."]=parseInt("100001000010",2);
+charMap["<"]=parseInt("100000100010",2);
+charMap["("]=parseInt("100000010010",2);
+charMap["+"]=parseInt("100000001010",2);
+charMap["|"]=parseInt("100000000110",2);
+charMap["!"]=parseInt("010010000010",2);
+charMap["$"]=parseInt("010001000010",2);
+charMap["*"]=parseInt("010000100010",2);
+charMap[")"]=parseInt("010000010010",2);
+charMap[";"]=parseInt("010000001010",2);
+charMap["^"]=parseInt("010000000110",2);
+charMap["~"]=parseInt("001010000010",2);
+charMap[","]=parseInt("001001000010",2);
+charMap["%"]=parseInt("001000100010",2);
+charMap["_"]=parseInt("001000010010",2);
+charMap[">"]=parseInt("001000001010",2);
+charMap["?"]=parseInt("001000000110",2);
+charMap[" "]=parseInt("000000000000",2);
+
+let badChars=new Set();
+let toastTimer=null;
+
+function getPattern(c){
+    return charMap[c.toUpperCase()];
+}
+
+function showToast(msg){
+    const t=document.getElementById("toast");
+    t.textContent=msg;
+    t.style.display="block";
+    clearTimeout(toastTimer);
+    toastTimer=setTimeout(()=>t.style.display="none",2500);
+}
+
+function init(){
+    canvas.width=bg.width;
+    canvas.height=bg.height;
+    render();
+    input.addEventListener("input",render);
+    document.getElementById("saveBtn").addEventListener("click",savePNG);
+}
+
+function render(){
+    ctx.drawImage(bg,0,0);
+
+    const text=input.value;
+    badChars=new Set();
+
+    for(let c=0;c<COLS&&c<text.length;c++){
+        const pat=getPattern(text[c]);
+        if(pat===undefined){
+            badChars.add(text[c]);
+            continue;
+        }
+        const x=originX+c*colSpacing;
+        for(let r=0;r<ROWS;r++){
+            if((1<<(11-r))&pat){
+                ctx.drawImage(hole,x-20,originY+r*rowSpacing-34);
+            }
+        }
+    }
+
+    if(badChars.size){
+        const list=[...badChars].map(ch=>`"${ch}"`).join(", ");
+        showToast(`Character${badChars.size>1?"s":""} not supported: ${list}`);
+    }
+}
+
+function savePNG(){
+    const a=document.createElement("a");
+    a.href=canvas.toDataURL("image/png");
+    a.download="punchedcard.png";
+    a.click();
+}
+
+</script>
+</body>
+</html>

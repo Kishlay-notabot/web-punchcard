@@ -155,7 +155,7 @@ function onLoad(){
 }
 
 function onError(){
-    document.getElementById("info").textContent="Failed to load image. Check that assets/punch.png, assets/hole.png, and assets/textlist2.png exist.";
+    document.getElementById("info").textContent="Failed to load image. Check that assets/emptypunch.png, assets/hole.png, and assets/textlist2.png exist.";
 }
 
 bg.onload=onLoad;
@@ -164,7 +164,7 @@ textImage.onload=onLoad;
 bg.onerror=onError;
 hole.onerror=onError;
 textImage.onerror=onError;
-bg.src="assets/punch.png";
+bg.src="assets/emptypunch.png";
 hole.src="assets/hole.png";
 textImage.src="assets/textlist2.png";
 
@@ -233,9 +233,9 @@ charMap["_"]=parseInt("001000010010",2);
 charMap[">"]=parseInt("001000001010",2);
 charMap["?"]=parseInt("001000000110",2);
 charMap[" "]=parseInt("000000000000",2);
+const textOffsetX=15;
 
-const textOffsetX=0;
-const textOffsetY=0;
+const textOffsetY=2;
 
 const SPRITE_X=2;
 const SPRITE_Y=0;

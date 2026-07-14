@@ -269,7 +269,7 @@ sprite indices.
 
 | Constant      | Value | Description |
 |---------------|-------|-------------|
-| `textOffsetX` | 0     | Horizontal offset for fine-tuning glyph centering |
+| `textOffsetX` | 5     | Horizontal offset for fine-tuning glyph centering |
 | `textOffsetY` | 0     | Vertical offset from the top of the card |
 | `SPRITE_W`    | 25    | Width of each glyph in the sprite sheet |
 | `SPRITE_H`    | 50    | Height of each glyph in the sprite sheet |

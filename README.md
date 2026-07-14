@@ -206,3 +206,88 @@ instantly as you type or delete.
 colX(col) = 72 + col × ((2133 - 72) / 79)
 rowY(row) = 79 + row × ((897 - 79) / 11)
 ```
+
+---
+
+## 7. Printed Text Above the Card
+
+The original punch card had text printed above each column.
+I took out a text strip from the same original punch card and used it as a 'sprite sheet' for the text. (`textlist2.png`, 1701×50 px).
+
+### Sprite Sheet Layout
+
+The glyphs are arranged horizontally in a single row:
+
+```
+startX = 2   startY = 0
+width  = 25  height = 50
+gap    = 1
+
+sx = startX + index × (width + gap)
+```
+
+### Character Order
+
+The sprite sheet maps to the following character sequence, with skipped
+positions at sprite indices 50 and 56. Also I couldn't find 2 (backtick and caret) characters, They were not there in the original image. (1-indexed: positions 51 and 57):
+
+```
+0123456789
+ABCDEFGHIJKLMNOPQRSTUVWXYZ
+#,$.-@%*<-/+_)  [SKIP51]  |&>:;  [SKIP57]  '?"=!(,
+```
+
+### Integration
+
+The text rendering runs after the punching loop in `render()`:
+
+```
+Type "HELLO"
+  │
+  ▼
+Earlier: punch holes (unchanged)
+  │
+  ▼
+For each column c with text:
+  ├─► Uppercase the character
+  ├─► Look up its sprite index in the lookup table
+  │     (skipped positions 50 and 56 are handled automatically)
+  └─► Crop glyph from textlist2.png at:
+        sx = 2 + spriteIndex × 26
+        sy = 0
+        sw = 25   sh = 50
+      Draw at:
+        dx = columnCenter + textOffsetX
+        dy = textOffsetY
+```
+
+A `charToSprite` Map is built automatically from the character sequence
+using the skip-aware parser. The mapping accounts for the two unused
+sprite indices.
+
+### Constants
+
+| Constant      | Value | Description |
+|---------------|-------|-------------|
+| `textOffsetX` | 0     | Horizontal offset for fine-tuning glyph centering |
+| `textOffsetY` | 0     | Vertical offset from the top of the card |
+| `SPRITE_W`    | 25    | Width of each glyph in the sprite sheet |
+| `SPRITE_H`    | 50    | Height of each glyph in the sprite sheet |
+| `SPRITE_X`    | 2     | X offset of the first glyph in the sheet |
+| `SPRITE_GAP`  | 1     | Gap between adjacent glyph sprites |
+
+### Unassigned Characters
+
+Characters in `charMap` that have no corresponding sprite glyph:
+- `` ` `` (backtick)
+- `^` (caret)
+
+These punch correctly but appear blank in the printed text. Their
+punch patterns remain unaffected. (I could design them manually but I chose to leave it as is.)
+
+### Unused Sprites
+
+Sprite indices 50, 56, and 64 have glyphs in `textlist2.png` that are
+not mapped to any typed character. Index 64 is an extra slot beyond
+the defined character sequence (the sheet has 65 slots / indices 0–64,
+of which 62 are mapped, 2 skipped, and 1 extra).

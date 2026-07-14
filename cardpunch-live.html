@@ -146,23 +146,27 @@ const input=document.getElementById("cardText");
 
 const bg=new Image();
 const hole=new Image();
+const textImage=new Image();
 let loaded=0;
 
 function onLoad(){
     loaded++;
-    if(loaded===2) init();
+    if(loaded===3) init();
 }
 
 function onError(){
-    document.getElementById("info").textContent="Failed to load image. Check that assets/punch.png and assets/hole.png exist.";
+    document.getElementById("info").textContent="Failed to load image. Check that assets/punch.png, assets/hole.png, and assets/textlist2.png exist.";
 }
 
 bg.onload=onLoad;
 hole.onload=onLoad;
+textImage.onload=onLoad;
 bg.onerror=onError;
 hole.onerror=onError;
+textImage.onerror=onError;
 bg.src="assets/punch.png";
 hole.src="assets/hole.png";
+textImage.src="assets/textlist2.png";
 
 const charMap={};
 charMap["&"]=parseInt("100000000000",2);
@@ -230,6 +234,25 @@ charMap[">"]=parseInt("001000001010",2);
 charMap["?"]=parseInt("001000000110",2);
 charMap[" "]=parseInt("000000000000",2);
 
+const textOffsetX=0;
+const textOffsetY=0;
+
+const SPRITE_X=2;
+const SPRITE_Y=0;
+const SPRITE_W=25;
+const SPRITE_H=50;
+const SPRITE_GAP=1;
+
+const charToSprite=new Map();
+const seq="0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ#,$.-@%*<-/+_)|&>:;"+"'"+'?"=!(,';
+let si=0;
+for(let p=0;p<seq.length;p++){
+    if(si===50||si===56)si++;
+    charToSprite.set(seq[p],si);
+    si++;
+}
+charToSprite.set('~',charToSprite.get('-'));
+
 let badChars=new Set();
 let toastTimer=null;
 
@@ -271,6 +294,14 @@ function render(){
                 ctx.drawImage(hole,x-20,originY+r*rowSpacing-34);
             }
         }
+    }
+
+    for(let c=0;c<COLS&&c<text.length;c++){
+        const si=charToSprite.get(text[c].toUpperCase());
+        if(si===undefined)continue;
+        const sx=SPRITE_X+si*(SPRITE_W+SPRITE_GAP);
+        const colCenter=originX+c*colSpacing;
+        ctx.drawImage(textImage,sx,SPRITE_Y,SPRITE_W,SPRITE_H,colCenter+textOffsetX,textOffsetY,SPRITE_W,SPRITE_H);
     }
 
     if(badChars.size){
